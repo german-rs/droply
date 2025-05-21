@@ -1,28 +1,65 @@
 "use client"
 
+/**
+ * Componente para el formulario de inicio de sesión de usuarios.
+ * 
+ * Este componente maneja la autenticación de usuarios mediante email y contraseña,
+ * incluyendo validación de campos, manejo de errores y redirección al dashboard.
+ * Utiliza Clerk para la autenticación y react-hook-form para el manejo del formulario.
+ *
+ * @module SignInForm
+ * @file SignInForm.tsx
+ * @component
+ */
+
+// Esquema de validación para el formulario
 import { signInSchema } from "@/schemas/signInSchema";
+
+// Utilidades para integración con react-hook-form
 import { zodResolver } from "@hookform/resolvers/zod";
+
+// Componentes UI personalizados
 import { Card, CardBody, CardHeader, CardFooter } from "@heroui/card";
-import { useRouter } from "next/navigation";
 import { Divider } from "@heroui/divider";
 import { Button } from "@heroui/button";
 import { Input } from "@heroui/input";
-import { useForm } from "react-hook-form";
-import { useSignIn } from "@clerk/nextjs";
+
+// Hooks de navegación y enrutamiento
+import { useRouter } from "next/navigation";
 import Link from "next/link";
+
+// Utilidades para manejo de formularios
+import { useForm } from "react-hook-form";
+
+// Servicio de autenticación
+import { useSignIn } from "@clerk/nextjs";
+
+// Iconos para la interfaz
 import { Mail, Lock, AlertCircle, Eye, EyeOff } from "lucide-react";
+
+// Librerías para validación y tipado
 import { z } from "zod";
+
+// Hooks de React para manejo de estado
 import { useState } from "react";
 
-
+/**
+ * Componente principal del formulario de inicio de sesión.
+ * 
+ * @returns {JSX.Element} El formulario de inicio de sesión con validaciones y manejo de errores
+ */
 export default function signInForm(){
+
+    // Hooks para navegación y autenticación
     const router = useRouter()
     const {signIn, isLoaded, setActive} = useSignIn()
+
+     // Estados del componente
     const [isSubmitting, setIsSubmitting] = useState(false)
     const [authError, setAuthError] = useState<string | null>(null)
     const [showPassword, setShowPassword] = useState(false)
 
-
+    // Configuración del formulario con react-hook-form y validación Zod
     const {
     register,
     handleSubmit,
@@ -35,25 +72,32 @@ export default function signInForm(){
     },
   });
 
-
+  /**
+   * Maneja el envío del formulario de inicio de sesión.
+   * 
+   * @param {z.infer<typeof signInSchema>} data - Datos del formulario (email y contraseña)
+   * @returns {Promise<void>} Promesa que resuelve después del intento de autenticación
+   */
     const onSubmit = async (data: z.infer<typeof signInSchema>) => {
         if(!isLoaded) return
         setIsSubmitting(true)
         setAuthError(null)
 
         try {
-            const result = await signIn.create({
-                identifier: data.identifier,
-                password: data.password
-            })
+          // Intentar autenticar al usuario con Clerk
+          const result = await signIn.create({
+              identifier: data.identifier,
+              password: data.password
+          })
 
-            if(result.status === "complete"){
-                await setActive({session: result.createdSessionId})
-                router.push("/dashboard");
-            }else{
-                console.error("Sign-in incomplete:", result);
-                setAuthError("Sign-in could not be completed. Please try again.");
-            }
+           // Si la autenticación es exitosa, redirigir al dashboard
+          if(result.status === "complete"){
+              await setActive({session: result.createdSessionId})
+              router.push("/dashboard");
+          }else{
+              console.error("Sign-in incomplete:", result);
+              setAuthError("Sign-in could not be completed. Please try again.");
+          }
            
         } catch (error: any) {
             console.error("Sign-in error:", error);
@@ -65,6 +109,16 @@ export default function signInForm(){
         }
     }
 
+  /**
+   * Renderiza la interfaz del formulario de inicio de sesión.
+   * 
+   * El componente está estructurado en una tarjeta (Card) con:
+   * - Encabezado con mensaje de bienvenida
+   * - Cuerpo con el formulario y manejo de errores
+   * - Pie de página con enlace a registro
+   * 
+   * @returns {JSX.Element} Componente visual del formulario de autenticación
+   */
     return(
         <Card className="w-full max-w-md border border-default-200 bg-default-50 shadow-xl">
       <CardHeader className="flex flex-col gap-1 items-center pb-2">
