@@ -3,8 +3,6 @@
 import { useForm } from "react-hook-form";
 import { useSignUp } from "@clerk/nextjs";
 import { z } from "zod";
-
-//zod custom schema
 import { signUpSchema } from "@/schemas/signUpSchema";
 import React, { useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -23,19 +21,59 @@ import {
   EyeOff,
 } from "lucide-react";
 
+
+/**
+ * Componente SignUpForm
+ * 
+ * Un formulario completo de registro de usuarios que maneja la creación de cuentas
+ * y verificación de email usando el servicio de autenticación Clerk. El componente
+ * proporciona un proceso de dos pasos:
+ * 1. Registro inicial con email y contraseña
+ * 2. Verificación de email con un código de 6 dígitos
+ * 
+ * Características:
+ * - Validación de formulario usando react-hook-form con esquema Zod
+ * - Alternar visibilidad de contraseñas
+ * - Manejo y visualización de errores en tiempo real
+ * - Estados de carga para mejor UX
+ * - Flujo de verificación de email
+ * - Diseño responsivo con componentes HeroUI
+ * 
+ * @returns {JSX.Element} El formulario completo de registro con flujo de verificación
+ */
 export default function SignUpForm() {
+
+  // Router de Next.js para navegación después del registro exitoso
   const router = useRouter();
+
+  // Gestión del estado del componente
+  /** Controla si el componente muestra el formulario de verificación o registro */
   const [verifying, setVerifying] = useState(false);
+
+   /** Rastrea el estado de carga durante los envíos de formulario */
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  /** Almacena el código de verificación ingresado por el usuario */
   const [verificationCode, setVerificationCode] = useState("");
+
+  /** Almacena mensajes de error relacionados con autenticación */
   const [authError, setAuthError] = useState<string | null>(null);
+
+   /** Controla la visibilidad del campo de contraseña */
   const [showPassword, setShowPassword] = useState(false);
+
+  /** Controla la visibilidad del campo de confirmación de contraseña */
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
+   /** Almacena mensajes de error específicos de verificación */
   const [verificationError, setVerificationError] = useState<string | null>(
     null
   );
+
+   // Hook de autenticación de Clerk
   const { signUp, isLoaded, setActive } = useSignUp();
 
+  // Configuración de React Hook Form con validación Zod
   const {
     register,
     handleSubmit,
@@ -49,22 +87,40 @@ export default function SignUpForm() {
     },
   });
 
+  /**
+   * Maneja el envío del formulario de registro inicial
+   * 
+   * Crea una nueva cuenta de usuario con Clerk e inicia el proceso de verificación de email.
+   * En caso de éxito, cambia el componente al modo de verificación.
+   * 
+   * @param {z.infer<typeof signUpSchema>} data - Datos del formulario que contienen email, contraseña y confirmación
+   * @returns {Promise<void>}
+   */
   const onSubmit = async (data: z.infer<typeof signUpSchema>) => {
+    // Asegurar que Clerk esté cargado antes de proceder
     if (!isLoaded) return;
     setIsSubmitting(true);
     setAuthError(null);
 
     try {
+      // Crear la cuenta de usuario con Clerk
       await signUp.create({
         emailAddress: data.email,
         password: data.password,
       });
+
+      // Iniciar el proceso de verificación de email
       await signUp.prepareEmailAddressVerification({
         strategy: "email_code",
       });
+
+      // Cambiar al modo de verificación
       setVerifying(true);
+
     } catch (error: any) {
       console.error("Signup error: ", error);
+
+      // Extraer y mostrar mensaje de error amigable para el usuario
       setAuthError(
         error.errors?.[0]?.message ||
           "An error occured during the signup. Please try again"
@@ -74,28 +130,47 @@ export default function SignUpForm() {
     }
   };
 
+  /**
+   * Maneja el envío del código de verificación de email
+   * 
+   * Valida el código de verificación ingresado por el usuario y completa el proceso de registro.
+   * En verificación exitosa, crea una sesión y redirige al dashboard.
+   * 
+   * @param {React.FormEvent<HTMLFormElement>} e - Evento de envío del formulario
+   * @returns {Promise<void>}
+   */
   const handleVerificationSubmit = async (
     e: React.FormEvent<HTMLFormElement>
   ) => {
     e.preventDefault();
+
+     // Asegurar que Clerk esté cargado y el objeto signUp exista
     if (!isLoaded || !signUp) return;
     setIsSubmitting(true);
     setAuthError(null);
 
     try {
+      // Intentar verificar el email con el código proporcionado
       const result = await signUp.attemptEmailAddressVerification({
         code: verificationCode,
       });
-      // todo: console result
+
+       // Verificar si la verificación fue exitosa
       if (result.status === "complete") {
+        // Crear y activar la sesión del usuario
         await setActive({ session: result.createdSessionId });
+
+        // Redirigir al dashboard en registro exitoso
         router.push("/dashboard");
+
       } else {
         console.error("Verification incomplete", result);
         setVerificationError("Verification could not be complete");
       }
     } catch (error: any) {
       console.error("Verification incomplete: ", error);
+
+       // Mostrar error de verificación amigable para el usuario
       setVerificationError(
         error.errors?.[0]?.message ||
           "An error occured during the signup. Please try again"
@@ -105,6 +180,12 @@ export default function SignUpForm() {
     }
   };
 
+  /**
+   * Vista de Verificación de Email
+   * 
+   * Se renderiza cuando el usuario necesita verificar su dirección de email.
+   * Incluye entrada de código de verificación, manejo de errores y funcionalidad de reenvío.
+   */
   if (verifying) {
     return (
         <Card className="w-full max-w-md border border-default-200 bg-default-50 shadow-xl">
@@ -178,6 +259,13 @@ export default function SignUpForm() {
      );
   }
 
+  
+  /**
+   * Vista Principal del Formulario de Registro
+   * 
+   * El formulario principal de registro con campos de email, contraseña y confirmación de contraseña.
+   * Incluye validación de formulario, visualización de errores y características de accesibilidad.
+   */
    return (
     <Card className="w-full max-w-md border border-default-200 bg-default-50 shadow-xl">
       <CardHeader className="flex flex-col gap-1 items-center pb-2">
