@@ -1,17 +1,5 @@
 "use client"
 
-/**
- * Componente para el formulario de inicio de sesión de usuarios.
- * 
- * Este componente maneja la autenticación de usuarios mediante email y contraseña,
- * incluyendo validación de campos, manejo de errores y redirección al dashboard.
- * Utiliza Clerk para la autenticación y react-hook-form para el manejo del formulario.
- *
- * @module SignInForm
- * @file SignInForm.tsx
- * @component
- */
-
 // Esquema de validación para el formulario
 import { signInSchema } from "@/schemas/signInSchema";
 
