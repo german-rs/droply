@@ -24,14 +24,14 @@ const authenticator = async () => {
 
 export function Providers({children, themeProps} : ProviderProps){
     return(
-            <ImageKitProvider 
-                authenticator={authenticator}
-                publicKey={process.env.NEXT_PUBLIC_IMAGEKIT_PUBLIC_KEY || ""}
-                urlEndpoint={process.env.NEXT_PUBLIC_IMAGEKIT_URL_ENDPOINT || ""}
-            >
-                <HeroUIProvider>
-                {children}
-                </HeroUIProvider>
-            </ImageKitProvider>
+        <ImageKitProvider 
+            authenticator={authenticator}
+            publicKey={process.env.NEXT_PUBLIC_IMAGEKIT_PUBLIC_KEY || ""}
+            urlEndpoint={process.env.NEXT_PUBLIC_IMAGEKIT_URL_ENDPOINT || ""}
+        >
+            <HeroUIProvider>
+            {children}
+            </HeroUIProvider>
+        </ImageKitProvider>
     );
 }
